@@ -2,14 +2,18 @@ import { describe, expect, it } from 'vitest';
 import { initialInventory, useFirst, wasteTotal, daysUntil } from '../lib/inventory';
 describe('confirmed expiry prioritization', () => {
  it('excludes an unconfirmed date from use-first ingredients', () => {
-   const item = { ...initialInventory[0], confirmed: false };
+   const first = initialInventory[0];
+   if (!first) throw new Error('Expected sample ingredient');
+   const item = { ...first, confirmed: false };
    expect(useFirst([item])).toEqual([]);
  });
  it('orders confirmed ingredients by earliest expiry', () => {
    expect(useFirst([...initialInventory].reverse()).map(item => item.id)).toEqual(['spinach', 'milk', 'tomatoes']);
  });
  it('excludes expired ingredients from use-first suggestions', () => {
-   expect(useFirst([{ ...initialInventory[0], expiry: '2026-10-10' }])).toEqual([]);
+   const first = initialInventory[0];
+   if (!first) throw new Error('Expected sample ingredient');
+   expect(useFirst([{ ...first, expiry: '2026-10-10' }])).toEqual([]);
  });
  it('calculates remaining days from confirmed calendar dates', () => {
    expect(daysUntil('2026-10-12', '2026-10-11')).toBe(1);

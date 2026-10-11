@@ -10,7 +10,7 @@ export function InventoryDialog({ open, onClose, item, mode, onAdd, onUse, onWas
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); const data = new FormData(event.currentTarget);
     if (mode === 'add') {
-      const category = String(data.get('category')); const photo = initialInventory.find(i => i.category === category)?.image ?? initialInventory[0].image;
+      const category = String(data.get('category')); const photo = initialInventory.find(i => i.category === category)?.image ?? initialInventory[0]?.image ?? '';
       onAdd({ id: crypto.randomUUID(), name: String(data.get('name')), quantity: String(data.get('quantity')), category, location: String(data.get('location')), expiry: String(data.get('expiry')), confirmed: data.get('confirmed') === 'on', cost: Number(data.get('cost')), image: photo });
     } else onWaste({ id: crypto.randomUUID(), name: item?.name ?? String(data.get('name')), quantity: String(data.get('quantity')), reason, cost: Number(data.get('cost')), date: demoToday }, item?.id);
     onClose();
