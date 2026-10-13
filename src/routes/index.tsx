@@ -1,10 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { ArrowDownLeft, ArrowRight, Bell, BookOpen, CalendarDays, Check, ChevronDown, CircleCheck, Clock3, Flame, LayoutGrid, Leaf, Package, Plus, Search, Shield, Sprout, TrendingDown, Trash2, Wheat } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { IngredientCard } from '@/components/annrakshak/ingredient-card';
-import { InventoryDialog } from '@/components/annrakshak/inventory-dialog';
-import { demoToday, initialInventory, initialWaste, shortDate, useFirst, wasteTotal, type Ingredient, type WasteEntry } from '@/lib/inventory';
+import { InventoryDialog, type DialogMode } from '@/components/annrakshak/inventory-dialog';
+import { demoToday, initialInventory, initialWaste, loadInventory, saveInventory, shortDate, useFirst, wasteTotal, type Ingredient, type WasteEntry } from '@/lib/inventory';
 
 export const Route = createFileRoute('/')({
   head: () => ({ meta: [
@@ -24,14 +25,17 @@ function Index() {
   const [category, setCategory] = useState('All items');
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [mode, setMode] = useState<'add' | 'detail' | 'waste'>('add');
+  const [mode, setMode] = useState<DialogMode>('add');
+  const loaded = useRef(false);
+  useEffect(() => { const stored = loadInventory(); if (stored) setItems(stored); loaded.current = true; }, []);
+  useEffect(() => { if (loaded.current && !saveInventory(items)) toast.error('Could not save your inventory on this device.'); }, [items]);
   const [selected, setSelected] = useState<Ingredient | null>(null);
   const [notice, setNotice] = useState('');
   const [notifications, setNotifications] = useState(false);
   const [kitchenOpen, setKitchenOpen] = useState(false);
   const [kitchen, setKitchen] = useState('My kitchen');
   const priority = useFirst(items);
-  const filtered = items.filter(item => (category === 'All items' || category === item.category) && item.name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = items.filter(item => (category === 'All items' || category === item.category) && item.name.toLowerCase().includes(search.trim().toLowerCase()));
   const dates = [...new Set(items.filter(i => i.confirmed).map(i => i.expiry))].sort();
   function openDialog(nextMode: typeof mode, item: Ingredient | null = null) { setMode(nextMode); setSelected(item); setDialogOpen(true); }
   function recordWaste(entry: WasteEntry, itemId?: string) { setWaste(previous => [entry, ...previous]); if (itemId) setItems(previous => previous.filter(i => i.id !== itemId)); setNotice(`${entry.name} recorded in your waste journal.`); }
@@ -58,15 +62,15 @@ function Index() {
       {view === 'Overview' && <section aria-label="Use First"><div className="section-heading"><div><div className="section-title"><Flame /><h2>Use First</h2><span className="count-badge">{priority.length} need attention</span></div><p className="section-subtitle">Good ingredients. Just a little less time.</p></div><Button variant="link" className="link-control" onClick={() => setView('Expiry timeline')}>View all expiring<ArrowRight /></Button></div><div className="priority-grid">{priority.map(item => <IngredientCard compact key={item.id} item={item} onSelect={item => openDialog('detail', item)} />)}{priority.length === 0 && <p className="empty-state">Nothing needs attention right now.</p>}</div></section>}
       {(view === 'Overview' || view === 'Inventory' || view === 'Expiry timeline') && <div className={view === 'Overview' ? 'workspace-grid' : ''}>
         {(view === 'Overview' || view === 'Inventory') && <section aria-label="Your inventory"><div className="section-heading"><div className="section-title"><h2>Your inventory</h2><span className="text-xs text-muted-foreground">({items.length})</span></div><Button variant="link" className="link-control" onClick={() => view === 'Overview' ? setView('Inventory') : openDialog('add')}>{view === 'Overview' ? 'View inventory' : 'Add ingredient'}<ArrowRight /></Button></div>
-        <div className="inventory-toolbar"><div className="filter-tabs" aria-label="Category filter">{['All items', 'Vegetables', 'Dairy', 'Fruit', 'Pantry'].map(name => <Button key={name} variant={category === name ? 'secondary' : 'ghost'} aria-pressed={category === name} onClick={() => setCategory(name)}>{name}</Button>)}</div><label className="search-box"><Search size={13} /><input aria-label="Search ingredients" placeholder="Search ingredients" value={search} onChange={e => setSearch(e.target.value)} /></label></div>
-        <div className="inventory-grid">{filtered.map(item => <IngredientCard key={item.id} item={item} onSelect={item => openDialog('detail', item)} />)}</div>{filtered.length === 0 && <p className="empty-state">No ingredients found.</p>}
+        <div className="inventory-toolbar"><div className="filter-tabs" aria-label="Category filter">{['All items', 'Vegetables', 'Dairy', 'Fruit', 'Pantry'].map(name => <Button key={name} variant={category === name ? 'secondary' : 'ghost'} aria-pressed={category === name} onClick={() => setCategory(name)}>{name}</Button>)}</div><Button size="sm" onClick={() => openDialog('add')}><Plus />Add Ingredient</Button><label className="search-box"><Search size={13} /><input aria-label="Search ingredients" placeholder="Search ingredients" value={search} onChange={e => setSearch(e.target.value)} /></label></div>
+        <div className="inventory-grid">{filtered.map(item => <IngredientCard key={item.id} item={item} onSelect={item => openDialog('detail', item)} />)}</div>{filtered.length === 0 && <p className="empty-state">{items.length ? 'No ingredients match your search or filter.' : 'Your inventory is empty. Add your first ingredient.'}</p>}
         </section>}
         {(view === 'Overview' || view === 'Expiry timeline') && <section className={view === 'Overview' ? 'timeline-section' : ''} aria-label="Upcoming expiry"><div className="section-heading"><div className="section-title"><CalendarDays /><h2>Upcoming expiry</h2></div></div><p className="timeline-range">11 – 18 October <span className="float-right flex items-center gap-1"><CircleCheck size={11} />Confirmed dates</span></p><div className="timeline">{dates.map(date => <div className="timeline-day" key={date}><span className="timeline-dot" /><div className="timeline-label">{date === demoToday ? 'Today' : date === '2026-10-12' ? 'Tomorrow' : new Date(`${date}T12:00:00`).toLocaleDateString('en-GB', { weekday: 'long' })}<span>{shortDate(date)}</span></div>{items.filter(item => item.expiry === date && item.confirmed).map(item => <div key={item.id} className="timeline-item"><img src={item.image} alt="" width={33} height={33} loading="lazy" /><div><strong>{item.name}</strong><small>{item.quantity} · {item.location}</small></div><Button variant="ghost" size="icon" className="ml-auto h-6 w-6" aria-label={`Inspect ${item.name}`} onClick={() => openDialog('detail', item)}><ArrowRight size={12} /></Button></div>)}</div>)}</div>{!dates.length && <p className="empty-state">No confirmed expiry dates yet.</p>}</section>}
       </div>}
       {(view === 'Overview' || view === 'Waste journal') && <section className="journal-section" aria-label="Waste journal"><div className="section-heading"><div><div className="section-title"><BookOpen /><h2>Waste journal</h2></div><p className="section-subtitle">Small reflections for a more mindful kitchen.</p></div><div className="journal-summary"><span>This month <strong>₹{wasteTotal(waste)}</strong></span><Button variant="outline" size="sm" onClick={() => openDialog('waste')}><Plus />Log waste</Button></div></div><table className="journal-table"><thead><tr><th>INGREDIENT</th><th>QUANTITY</th><th>REASON</th><th>DATE</th><th>COST</th></tr></thead><tbody>{waste.map(entry => <tr key={entry.id}><td>{entry.name}</td><td>{entry.quantity}</td><td><span className="reason-tag">{entry.reason}</span></td><td>{shortDate(entry.date)}</td><td>₹{entry.cost}</td></tr>)}</tbody></table>{!waste.length && <p className="empty-state">No waste recorded.</p>}</section>}
       <footer className="page-footer"><span><Leaf size={12} />Less waste. More possibility.</span><span>Sample kitchen · October 2026 <span className="mx-1">/</span>Made with care, AnnRakshak</span></footer>
     </main>
-    <InventoryDialog key={`${mode}-${selected?.id ?? 'new'}-${dialogOpen}`} open={dialogOpen} onClose={() => setDialogOpen(false)} item={selected} mode={mode} onAdd={item => { setItems(previous => [...previous, item]); setNotice(`${item.name} added to your inventory.`); }} onUse={id => { const item = items.find(i => i.id === id); setItems(previous => previous.filter(i => i.id !== id)); setNotice(`${item?.name ?? 'Ingredient'} marked as used. One less ingredient wasted.`); }} onWaste={recordWaste} />
+    <InventoryDialog key={`${mode}-${selected?.id ?? 'new'}-${dialogOpen}`} open={dialogOpen} onClose={() => setDialogOpen(false)} item={selected} mode={mode} onModeChange={setMode} onSave={(item, isNew) => { setItems(previous => isNew ? [...previous, item] : previous.map(i => i.id === item.id ? item : i)); toast.success(isNew ? `${item.name} added to your inventory.` : `${item.name} updated.`); }} onDelete={id => { const item = items.find(i => i.id === id); setItems(previous => previous.filter(i => i.id !== id)); toast.success(`${item?.name ?? 'Ingredient'} deleted.`); }} onUse={id => { const item = items.find(i => i.id === id); setItems(previous => previous.filter(i => i.id !== id)); setNotice(`${item?.name ?? 'Ingredient'} marked as used. One less ingredient wasted.`); }} onWaste={recordWaste} />
   </div>;
 }
 function Stat({ label, value, unit, icon: Icon, foot, warning = false }: { label: string; value: string; unit?: string; icon: typeof Package; foot: string; warning?: boolean }) { return <article className="stat-card"><div className="stat-top"><span>{label}</span><Icon /></div><div className={warning ? 'stat-value text-warning' : 'stat-value'}>{value}{unit && <small>{unit}</small>}</div><p className="stat-foot">{warning ? <Clock3 size={10} /> : <ArrowDownLeft size={10} />}{foot}</p></article>; }
