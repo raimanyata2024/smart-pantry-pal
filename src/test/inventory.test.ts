@@ -24,3 +24,11 @@ describe('waste cost', () => {
    expect(wasteTotal([{ id: '1', name: 'Bread', quantity: '2 slices', reason: 'Stale', date: '2026-10-11', cost: 12 }, { id: '2', name: 'Bananas', quantity: '2', reason: 'Overripe', date: '2026-10-11', cost: 20 }])).toBe(32);
  });
 });
+import { validateIngredient, toIngredient } from '../lib/inventory';
+const valid = { name: 'Rice', amount: '2', unit: 'kg', category: 'Pantry', location: 'Pantry', purchaseDate: '2026-10-11', expiry: '', confirmed: false, cost: '' };
+describe('ingredient form rules', () => {
+ it('requires name, quantity and purchase date', () => { expect(Object.keys(validateIngredient({ ...valid, name: ' ', amount: '', purchaseDate: '' })).sort()).toEqual(['amount', 'name', 'purchaseDate']); });
+ it('accepts a missing expiry and never invents one', () => { expect(validateIngredient(valid)).toEqual({}); expect(toIngredient(valid).expiry).toBe(''); });
+ it('rejects expiry before purchase', () => { expect(validateIngredient({ ...valid, expiry: '2026-10-01' }).expiry).toBeDefined(); });
+ it('rejects zero quantity', () => { expect(validateIngredient({ ...valid, amount: '0' }).amount).toBeDefined(); });
+});

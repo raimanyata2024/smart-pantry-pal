@@ -11,5 +11,5 @@
 
 ## AnnRakshak architecture
 - Keep theme tokens in `src/styles.css` and reusable dashboard pieces in `src/components/annrakshak` so the existing Figma design can replace presentation without replacing domain data.
-- Keep sample inventory and expiry helpers in `src/lib/inventory.ts`; this first version is a frontend-only session demo, not persistent inventory storage.
+- Keep sample inventory and expiry helpers in `src/lib/inventory.ts`; inventory persists in browser localStorage (per device, no account) until a backend is added.
 - Use the existing TanStack home route for the dashboard and in-app view controls for the inventory and journal workspace.
