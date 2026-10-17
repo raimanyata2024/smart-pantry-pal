@@ -3,7 +3,7 @@ import spinach from '@/assets/spinach.jpg';
 import milk from '@/assets/milk.jpg';
 import carrots from '@/assets/carrots.jpg';
 
-export type Ingredient = { id: string; name: string; category: string; quantity: string; location: string; expiry: string; confirmed: boolean; cost: number; image: string; amount?: number; unit?: string; purchaseDate?: string };
+export type Ingredient = { id: string; name: string; category: string; quantity: string; location: string; expiry: string; confirmed: boolean; cost: number; image?: string; amount?: number; unit?: string; purchaseDate?: string };
 export type WasteEntry = { id: string; name: string; quantity: string; reason: string; cost: number; date: string };
 export const demoToday = '2026-10-11';
 export const initialInventory: Ingredient[] = [
@@ -45,8 +45,7 @@ export function validateIngredient(input: IngredientInput) {
   return errors;
 }
 export function toIngredient(input: IngredientInput, base?: Ingredient): Ingredient {
-  const photo = base?.category === input.category ? base.image : initialInventory.find(i => i.category === input.category)?.image ?? initialInventory[0]?.image ?? '';
-  return { id: base?.id ?? crypto.randomUUID(), name: input.name.trim(), amount: Number(input.amount), unit: input.unit, quantity: `${Number(input.amount)} ${input.unit}`, category: input.category, location: input.location, purchaseDate: input.purchaseDate, expiry: input.expiry, confirmed: input.confirmed && !!input.expiry, cost: input.cost.trim() ? Number(input.cost) : 0, image: photo };
+  return { id: base?.id ?? crypto.randomUUID(), name: input.name.trim(), amount: Number(input.amount), unit: input.unit, quantity: `${Number(input.amount)} ${input.unit}`, category: input.category, location: input.location, purchaseDate: input.purchaseDate, expiry: input.expiry, confirmed: input.confirmed && !!input.expiry, cost: input.cost.trim() ? Number(input.cost) : 0 };
 }
 const STORAGE_KEY = 'annrakshak.inventory.v1';
 export function loadInventory(): Ingredient[] | null {
