@@ -14,7 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      inventory_items: {
+        Row: {
+          amount: number
+          category: string
+          cost: number
+          created_at: string
+          expiry_confirmed: boolean
+          expiry_date: string | null
+          id: string
+          location: string
+          name: string
+          purchase_date: string
+          unit: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category?: string
+          cost?: number
+          created_at?: string
+          expiry_confirmed?: boolean
+          expiry_date?: string | null
+          id?: string
+          location: string
+          name: string
+          purchase_date: string
+          unit: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          cost?: number
+          created_at?: string
+          expiry_confirmed?: boolean
+          expiry_date?: string | null
+          id?: string
+          location?: string
+          name?: string
+          purchase_date?: string
+          unit?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      waste_entries: {
+        Row: {
+          cost: number
+          created_at: string
+          id: string
+          name: string
+          quantity: string
+          reason: string
+          user_id: string
+          wasted_on: string
+        }
+        Insert: {
+          cost?: number
+          created_at?: string
+          id?: string
+          name: string
+          quantity: string
+          reason: string
+          user_id?: string
+          wasted_on?: string
+        }
+        Update: {
+          cost?: number
+          created_at?: string
+          id?: string
+          name?: string
+          quantity?: string
+          reason?: string
+          user_id?: string
+          wasted_on?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
